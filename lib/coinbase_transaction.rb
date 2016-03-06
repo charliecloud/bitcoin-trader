@@ -7,9 +7,8 @@ class CoinbaseTransaction
      @client = Coinbase::Wallet::Client.new(api_key: key, api_secret: secret, api_url: url)
   end
   
-  def get_price()
-    #TODO: Allow different currencies?
-    @client.buy_price({currency: 'USD'})
+  def get_price(currency="USD")
+    @client.buy_price({:currency => currency})
   end
   
   def buy_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
