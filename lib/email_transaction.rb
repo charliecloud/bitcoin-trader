@@ -5,6 +5,7 @@ class EmailTransaction
  
   def initialize(email,pw)
     @gmail = Gmail.new(email, pw)
+    @logger = Logger.new(STDOUT)
   end
   
   def send_email(fromAdd, toAdd, eSub, eBody)
@@ -17,6 +18,7 @@ class EmailTransaction
       body eBody
     end
     email.deliver! 
+    @logger.info("Email delivered")
   end
   
   def get_emails(peek=false, fromAdd)
