@@ -42,8 +42,10 @@ class BitcoinTrader
   private
   
   def check_price_action
-    per_diff = percent_diff(PRICE_BASE, btc_price)
-    log_event(per_diff) if per_diff >= PER_THRESHOLD
+    @logger.info("Performing Price Check")
+    curr_price = btc_price
+    per_diff = percent_diff(PRICE_BASE, curr_price)
+    send_email("Notification price change above #{per_diff}%","Price is: #{curr_price}") if per_diff >= PER_THRESHOLD
   end
 
   def get_email_commands_action
@@ -52,12 +54,12 @@ class BitcoinTrader
     messages.each {|m| read_email_subject_for_command(m.subject)}
   end
 
-  def send_email(content)
+  def send_email(subject, body=nil)
     #TODO: Return whether it was successful?
     #TODO: Pass in subject and message
     @email_transact.send_email(@email_from, @email_to, 
-                         "Notification price change above #{PER_THRESHOLD}%",
-                          "Price is: #{content}")                         
+                         subject,
+                         body)                         
   end
 
   def get_emails()
@@ -98,9 +100,7 @@ class BitcoinTrader
       sold = sell_btc(amt)
       @logger.info("Sold #{amt} BTC successfully") unless !sold
     when "check" 
-      @email_transact.send_email(@email_from, @email_to, 
-                            "Price update: price is #{btc_price}",
-                            nil)
+      send_email("Price update: price is #{btc_price}")
     else
       @logger.warn("Unknown command #{comm}")
       return false
@@ -119,12 +119,6 @@ class BitcoinTrader
 
   def percent_diff(base, change)
     (1-base/change) * 100
-  end
-  
-  #TODO: Rename this
-  def log_event(event)
-    @logger.info(event)
-    send_email(event)
   end
   
   def btc_price
