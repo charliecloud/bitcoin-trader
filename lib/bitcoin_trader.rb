@@ -54,6 +54,7 @@ class BitcoinTrader
 
   def send_email(content)
     #TODO: Return whether it was successful?
+    #TODO: Pass in subject and message
     @email_transact.send_email(@email_from, @email_to, 
                          "Notification price change above #{PER_THRESHOLD}%",
                           "Price is: #{content}")                         
@@ -119,9 +120,9 @@ class BitcoinTrader
   def percent_diff(base, change)
     (1-base/change) * 100
   end
-
+  
+  #TODO: Rename this
   def log_event(event)
-    #TODO: Log to a text file
     @logger.info(event)
     send_email(event)
   end
