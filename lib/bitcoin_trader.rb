@@ -1,5 +1,6 @@
 require_relative 'email_transaction'
 require_relative 'coinbase_transaction'
+require 'logger'
 
 MIN_CHECK = 1
 
@@ -11,14 +12,15 @@ class BitcoinTrader
   
   #Initalizes the program
   def initialize(live, key, secret, url, email_from, pw, email_to)
+    @logger = Logger.new(STDOUT)
     @email_from = email_from
     @email_to = email_to
     @email_transact = EmailTransaction.new(email_from, pw)
     if !live
-      puts "Using sandbox"
+      @logger.info("Using sandbox")
       @client = CoinbaseTransaction.new(key,secret,url)
     else
-      puts "Using live env"
+      @logger.info("Using live env")
       @client = CoinbaseTransaction.new(key,secret)
     end
   end
@@ -66,7 +68,7 @@ class BitcoinTrader
     #make sure it is not blank email subject
     #TODO: Seperate all the subject checking to seperate function
     if email_subject.nil?
-      puts "Blank email subject line"
+      @logger.warn("Blank email subject line")
       return
     end
     email_subject.strip!
@@ -75,31 +77,31 @@ class BitcoinTrader
     if strings[0].is_a? String
       comm = strings[0].downcase
     else
-       puts "First word in subject line must be a string. Got #{strings[0]}"
+       @logger.error("First word in subject line must be a string. Got #{strings[0]}")
        return
     end
     #to_f never throws exception, so this is safe.
     amt = strings[1].to_f
     if amt.zero? && comm != "check"
-      puts "Amount must be greater than 0"
+      @logger.warn("Amount must be greater than 0")
       return
     end
     #check to see what command to do
     case comm
     when "buy"
-      puts "Buying: #{amt} BTC"
+      @logger.info("Buying: #{amt} BTC")
       bought = buy_btc(amt)
-      puts "Bought #{amt} BTC successfully" unless !bought
+      @logger.info("Bought #{amt} BTC successfully") unless !bought
     when "sell"
-      puts "Selling: #{amt} BTC"
+      @logger.info("Selling: #{amt} BTC")
       sold = sell_btc(amt)
-      puts "Sold #{amt} BTC successfully" unless !sold
+      @logger.info("Sold #{amt} BTC successfully") unless !sold
     when "check" 
       @email_transact.send_email(@email_from, @email_to, 
                             "Price update: price is #{btc_price}",
                             nil)
     else
-      puts "Error: Unknown command #{comm}"
+      @logger.warn("Unknown command #{comm}")
       return false
     end
   end
@@ -120,7 +122,7 @@ class BitcoinTrader
 
   def log_event(event)
     #TODO: Log to a text file
-    puts event
+    @logger.info(event)
     send_email(event)
   end
   
