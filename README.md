@@ -12,6 +12,7 @@ Create an instance of BitcoinTrader similar to below
 require_relative 'bitcoin_trader'
 
 btc_trader = BitcoinTrader.new(false, S_KEY,S_SECRET,SBOX_URL,EMAIL,PW, TO_EMAIL)
+
 btc_trader.run
 
 Run the file using ruby 'filename'
