@@ -1,5 +1,5 @@
 # bitcoin-trader
-A ruby program that allows for automated and manual buying/selling of BTC based on certain criteria. Uses coinbase API
+A ruby program that allows for automated and manual buying/selling of BTC based on certain criteria. Allows interaction and commands via email. Uses coinbase API
 
 ## Download
 Download all of the files in the repo
