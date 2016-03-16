@@ -16,7 +16,6 @@ class CoinbaseTransaction
   end
   
   def buy_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
-    #TODO: cutoff point for how many BTC to buy?
     #TODO: Bubble up exceptions when buying
     buy = @client.primary_account.buy({:amount => amt,
                                        :currency => currency,
@@ -32,7 +31,6 @@ class CoinbaseTransaction
    end
    
  def sell_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
-    #TODO: Threshold for amount or price?
     sell = @client.primary_account.sell({:amount => amt,
                        :currency => "BTC",
                        :payment_method => p_method.id})
