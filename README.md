@@ -1,8 +1,13 @@
 # bitcoin-trader
-A ruby program that allows for automated and manual buying/selling of BTC based on certain criteria. Allows interaction and commands via email. Uses coinbase API
+A ruby program that allows for automated and manual buying/selling of BTC based on certain criteria. Allows interaction and commands via email. Uses coinbase API for BTC transactions
+
+##Dependencies
+
+Coinbase - gem install coinbase
+Ruby-Gmail - gem install ruby-gmail
 
 ## Download
-Download all of the files in the repo
+Download all of the files in the repo to wherever you would like to run them
 
 ## Run
 Create a driver file (can name it whatever) in the same directory as the downloaded files
