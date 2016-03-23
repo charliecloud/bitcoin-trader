@@ -4,6 +4,7 @@ A ruby program that allows for automated and manual buying/selling of BTC based 
 ##Dependencies
 
 Coinbase - gem install coinbase
+
 Ruby-Gmail - gem install ruby-gmail
 
 ## Download
