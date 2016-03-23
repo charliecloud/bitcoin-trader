@@ -8,10 +8,13 @@ PRICE_BASE = 430
 #TODO: Allow multiple price checks at different percentages
 PER_THRESHOLD = 30
 
+
 class BitcoinTrader
   
   #Initalizes the program
   def initialize(live, key, secret, url, email_from, pw, email_to)
+    @price_percent_checks = {}
+    @price_percent_checks[PRICE_BASE] = PER_THRESHOLD
     @logger = Logger.new(STDOUT)
     @email_from = email_from
     @email_to = email_to
@@ -44,12 +47,19 @@ class BitcoinTrader
   def check_price_action
     @logger.info("Performing Price Check")
     curr_price = btc_price
-    per_diff = percent_diff(PRICE_BASE, curr_price)
-    send_email("Notification price change above #{per_diff}%","Price is: #{curr_price}") if per_diff >= PER_THRESHOLD
+    #for each of the price-check thresholds do a price check
+    @price_percent_checks.each {
+      |k,v| per_diff = percent_diff(k, curr_price)
+      send_email("Notification price change above threshold #{v}%","Price is: #{curr_price}, Threshold price is #{k}") if per_diff >= v
+    }
+    #per_diff = percent_diff(PRICE_BASE, curr_price)
+    #send_email("Notification price change above #{per_diff}%","Price is: #{curr_price}") if per_diff >= PER_THRESHOLD
   end
 
   def get_email_commands_action
+    @logger.info("Performing Get Email Commands")
     messages = get_emails()
+    @logger.info("Retrieved #{messages.length} emails")
     # process the commands from the email subject lines
     messages.each {|m| read_email_subject_for_command(m.subject)}
   end
@@ -89,6 +99,10 @@ class BitcoinTrader
       @logger.warn("Amount must be greater than 0")
       return
     end
+    
+    #percentage will be 3rd parameter for adding alerts
+    perc = strings[2].to_i
+    
     #check to see what command to do
     case comm
     when "buy"
@@ -101,10 +115,17 @@ class BitcoinTrader
       @logger.info("Sold #{amt} BTC successfully") unless !sold
     when "check" 
       send_email("Price update: price is #{btc_price}")
+    when "add"
+      add_price_check(amt,perc)
+      @logger.info("Price check added for price: #{amt} and percent #{perc}")
     else
       @logger.warn("Unknown command #{comm}")
       return false
     end
+  end
+  
+  def add_price_check(price, percent)
+    @price_percent_checks[price] = percent
   end
   
   def buy_btc(amt, currency="BTC")  
