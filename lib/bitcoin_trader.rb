@@ -1,11 +1,11 @@
 require_relative 'email_transaction'
 require_relative 'coinbase_transaction'
+require_relative 'bitcoin_order'
 require 'logger'
 
 MIN_CHECK = 1
 
 PRICE_BASE = 430
-#TODO: Allow multiple price checks at different percentages
 PER_THRESHOLD = 30
 
 
@@ -26,6 +26,8 @@ class BitcoinTrader
       @logger.info("Using live env")
       @client = CoinbaseTransaction.new(key,secret)
     end
+    btc_order = BitcoinOrder.new(@client, :buy, 11000, DateTime.now, DateTime.new(2016,03,30), :absolute, 1, 3, 0.01)
+    btc_order.run_order
   end
   
   #Main program loop
