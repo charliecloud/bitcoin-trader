@@ -17,6 +17,7 @@ class EmailTransaction
       body eBody }
     email.deliver! 
     @logger.info("Email delivered")
+    return true
   end
   
   def get_emails(peek=false, fromAdd)
