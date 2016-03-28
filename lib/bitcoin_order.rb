@@ -24,37 +24,47 @@ class BitcoinOrder
   end
   
   def run_order
-    able_to_run = true;
-    #TODO: set to complete on certain criteria
-    #only run if not completed
-    if @completed
-      @logger.info("Order not able to run because already in completed status")
-      able_to_run = false;
+    able_to_run = pre_run_checks
+    if able_to_run
+      fulfill_order
+    else
+      return false
     end
-    #only run if it is past the effective date
-    if @effective_dttm > DateTime.now
-      @logger.info("Order not able to run because it is not effective yet")
-      able_to_run = false;
-    end
-    #only run if not past the expiration date
-    if @expiration_dttm < DateTime.now
-      @logger.info("Order not able to run because it is already expired")
-      able_to_run = false;
-    end
-    #only run if amount so far is less than so_far + how much for each order
-    if ((@amount_so_far+@amount_each_order) > @total_order_amount)
-      @logger.info("Order is not able to run because doing so will put it over the total order amount")
-      able_to_run = false;
-    end
-    return false unless able_to_run
-    @logger.info("Initial checks complete, attempting to fulfill #{@order_type} order for #{@amount_each_order} BTC")
-    fulfill_order
   end
   
   private
   
+  def pre_run_checks
+    #only run if not completed
+    if @completed
+      @logger.info("Order not able to run because already in completed status")
+      return false
+    end
+    #only run if it is past the effective date
+    if @effective_dttm > DateTime.now
+      @logger.info("Order not able to run because it is not effective yet")
+      return false
+    end
+    #only run if not past the expiration date
+    if @expiration_dttm < DateTime.now
+      @logger.info("Order not able to run because it is already expired")
+      #since the order is expired mark it as complete
+      @completed = true
+      return false
+    end
+    #only run if amount so far is less than so_far + how much for each order
+    if ((@amount_so_far+@amount_each_order) > @total_order_amount)
+      @logger.info("Order is not able to run because doing so will put it over the total order amount")
+      #mark it as complete now
+      @completed = true
+      return false
+    end
+    @logger.info("Pre-run checks complete, attempting to fulfill #{@buy_or_sell} #{@order_type} order for #{@amount_each_order} BTC")
+    return true
+  end
+  
   def fulfill_order
-    trans_executed = false;
+    trans_executed = false
     #get the price
     curr_price = @btc_trans.get_price.amount.to_f
     per_thresh = percent_diff(@price_thresh, curr_price)
@@ -67,13 +77,13 @@ class BitcoinOrder
         if curr_price <= @price_thresh
           #exectute order
           @logger.info("Executing absolute buy order for price_thresh #{@price_thresh}, price is #{curr_price}")
-          trans_executed = true;
+          trans_executed = true
         end
       elsif @order_type == :percent
         if (per_thresh < -@per_thresh)
           #execute order
           @logger.info("Executing percent buy order for per_thresh #{-@per_thresh}, price is #{curr_price}")
-          trans_executed = true;
+          trans_executed = true
         end
       else
         @logger.warn("Unknown order_type #{@order_type}")
@@ -84,12 +94,12 @@ class BitcoinOrder
         if curr_price >= @price_thresh
           #execute order
           @logger.info("Executing absolute sell order for price_thresh #{@price_thresh}, price is #{curr_price}")
-          trans_executed = true;
+          trans_executed = true
         end
       elsif @order_type == :percent
         if (per_thresh > @per_thresh)
           @logger.info("Executing percent sell order for per_thresh #{@per_thresh}, price is #{curr_price}")
-          trans_executed = true;
+          trans_executed = true
         end
       end
     else
@@ -97,13 +107,13 @@ class BitcoinOrder
     end
     if trans_executed
       @logger.info("Order exectued")
-      post_order_updates
+      post_run_checks
     else
       @logger.info("Order not exectued")
     end
   end
   
-  def post_order_updates
+  def post_run_checks
     @num_times_run += 1
     @completed = true if @num_times_run == @times_to_order
     @completed = true if @expiration_dttm < DateTime.now

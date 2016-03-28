@@ -26,16 +26,21 @@ class BitcoinTrader
       @client = CoinbaseTransaction.new(key,secret)
     end
     btc_order = BitcoinOrder.new(@client, :buy, 11000, 5, DateTime.now, DateTime.new(2016,03,30), :absolute, 2, 2, 1.3)
+    btc_order2 = BitcoinOrder.new(@client, :sell, 9000, 5, DateTime.now, DateTime.new(2016,03,30), :percent, 2, 5, 0.3)
+    btc_order3 = BitcoinOrder.new(@client, :buy, 12000, 30, DateTime.now, DateTime.new(2016,03,27), :percent, 2, 1, 0.5)
+
     @order_book.push(btc_order)
+    @order_book.push(btc_order2)
+    @order_book.push(btc_order3)
   end
   
   #Main program loop
   def run
     while(true) do
       #do any standard actions and send notification if neccesary
-      check_price_action
+      #check_price_action
       #check for any actions that are needed
-      get_email_commands_action
+      #get_email_commands_action
       #run the order book to execute any valid orders
       run_order_book_action
       sleep(60*MIN_CHECK)
