@@ -26,7 +26,7 @@ class BitcoinTrader
       @logger.info("Using live env")
       @client = CoinbaseTransaction.new(key,secret)
     end
-    btc_order = BitcoinOrder.new(@client, :buy, 11000, DateTime.now, DateTime.new(2016,03,30), :absolute, 1, 3, 0.01)
+    btc_order = BitcoinOrder.new(@client, :sell, 9000, 5, DateTime.now, DateTime.new(2016,03,30), :percent, 1, 2, 0.3)
     btc_order.run_order
   end
   
@@ -36,9 +36,9 @@ class BitcoinTrader
     while(true) do
       #puts counter
       #first do any standard actions and send notification if neccesary
-      check_price_action
+      #check_price_action
       #check for any actions that are needed
-      get_email_commands_action
+      #get_email_commands_action
       sleep(60*MIN_CHECK)
       #counter += 1
     end
