@@ -128,6 +128,7 @@ class BitcoinTrader
      btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
                   expiration_dttm, order_type, total_order_amount, times_to_order, amount_each_order)
      @order_book.push(btc_order)
+     
   end
   
   def send_email(subject, body=nil)
