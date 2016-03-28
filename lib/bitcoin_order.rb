@@ -25,6 +25,7 @@ class BitcoinOrder
   
   def run_order
     able_to_run = true;
+    #TODO: set to complete on certain criteria
     #only run if not completed
     if @completed
       @logger.info("Order not able to run because already in completed status")
@@ -46,7 +47,7 @@ class BitcoinOrder
       able_to_run = false;
     end
     return false unless able_to_run
-    @logger.info("Initial checks complete, attempting to fulfill order for #{@amount_each_order} BTC")
+    @logger.info("Initial checks complete, attempting to fulfill #{@order_type} order for #{@amount_each_order} BTC")
     fulfill_order
   end
   
@@ -74,6 +75,8 @@ class BitcoinOrder
           @logger.info("Executing percent buy order for per_thresh #{-@per_thresh}, price is #{curr_price}")
           trans_executed = true;
         end
+      else
+        @logger.warn("Unknown order_type #{@order_type}")
       end
     elsif @buy_or_sell == :sell
       @logger.info("Sell order")
@@ -89,6 +92,8 @@ class BitcoinOrder
           trans_executed = true;
         end
       end
+    else
+      @logger.warn("Unknown buy_or_sell type #{@buy_or_sell}")
     end
     if trans_executed
       @logger.info("Order exectued")

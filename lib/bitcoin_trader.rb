@@ -3,17 +3,16 @@ require_relative 'coinbase_transaction'
 require_relative 'bitcoin_order'
 require 'logger'
 
-MIN_CHECK = 1
-
-PRICE_BASE = 430
-PER_THRESHOLD = 30
-
-
 class BitcoinTrader
+  MIN_CHECK = 1
+  PRICE_BASE = 430
+  PER_THRESHOLD = 30
   
   #Initalizes the program
   def initialize(live, key, secret, url, email_from, pw, email_to)
     @price_percent_checks = {}
+    #order book that will contain all of the current orders that need to be executed
+    @order_book = []
     @price_percent_checks[PRICE_BASE] = PER_THRESHOLD
     @logger = Logger.new(STDOUT)
     @email_from = email_from
@@ -26,44 +25,46 @@ class BitcoinTrader
       @logger.info("Using live env")
       @client = CoinbaseTransaction.new(key,secret)
     end
-    btc_order = BitcoinOrder.new(@client, :sell, 9000, 5, DateTime.now, DateTime.new(2016,03,30), :percent, 1, 2, 0.3)
-    btc_order.run_order
+    btc_order = BitcoinOrder.new(@client, :buy, 11000, 5, DateTime.now, DateTime.new(2016,03,30), :absolute, 2, 2, 1.3)
+    @order_book.push(btc_order)
   end
   
   #Main program loop
   def run
-    #counter = 0
     while(true) do
-      #puts counter
-      #first do any standard actions and send notification if neccesary
-      #check_price_action
+      #do any standard actions and send notification if neccesary
+      check_price_action
       #check for any actions that are needed
-      #get_email_commands_action
+      get_email_commands_action
+      #run the order book to execute any valid orders
+      run_order_book_action
       sleep(60*MIN_CHECK)
-      #counter += 1
     end
   end
 
   private
   
   def check_price_action
-    @logger.info("Performing Price Check")
+    @logger.info("Performing price-check Action")
     curr_price = btc_price
     #for each of the price-check thresholds do a price check
     @price_percent_checks.each {
       |k,v| per_diff = percent_diff(k, curr_price)
       send_email("Notification price change above threshold #{v}%","Price is: #{curr_price}, Threshold price is #{k}") if per_diff >= v
     }
-    #per_diff = percent_diff(PRICE_BASE, curr_price)
-    #send_email("Notification price change above #{per_diff}%","Price is: #{curr_price}") if per_diff >= PER_THRESHOLD
   end
 
   def get_email_commands_action
-    @logger.info("Performing Get Email Commands")
+    @logger.info("Performing get-email-commands Action")
     messages = get_emails()
     @logger.info("Retrieved #{messages.length} emails")
     # process the commands from the email subject lines
     messages.each {|m| read_email_subject_for_command(m.subject)}
+  end
+  
+  def run_order_book_action
+    @logger.info("Performing run-order-book Action")
+    @order_book.each{|order| order.run_order}
   end
 
   def send_email(subject, body=nil)
