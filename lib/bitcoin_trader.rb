@@ -1,20 +1,16 @@
 require_relative 'email_transaction'
 require_relative 'coinbase_transaction'
+require_relative 'bitcoin_order'
 require 'logger'
 
-MIN_CHECK = 1
-
-PRICE_BASE = 430
-#TODO: Allow multiple price checks at different percentages
-PER_THRESHOLD = 30
-
-
 class BitcoinTrader
+  MIN_CHECK = 1
   
   #Initalizes the program
   def initialize(live, key, secret, url, email_from, pw, email_to)
     @price_percent_checks = {}
-    @price_percent_checks[PRICE_BASE] = PER_THRESHOLD
+    #order book that will contain all of the current orders that need to be executed
+    @order_book = []
     @logger = Logger.new(STDOUT)
     @email_from = email_from
     @email_to = email_to
@@ -30,51 +26,40 @@ class BitcoinTrader
   
   #Main program loop
   def run
-    #counter = 0
     while(true) do
-      #puts counter
-      #first do any standard actions and send notification if neccesary
-      check_price_action
-      #check for any actions that are needed
+      #get all new actions from email
       get_email_commands_action
+      #perform the check_price action as needed
+      check_price_action
+      #run the order book action to execute any valid orders
+      run_order_book_action
       sleep(60*MIN_CHECK)
-      #counter += 1
     end
   end
 
   private
   
   def check_price_action
-    @logger.info("Performing Price Check")
+    @logger.info("Performing price-check Action")
     curr_price = btc_price
     #for each of the price-check thresholds do a price check
     @price_percent_checks.each {
       |k,v| per_diff = percent_diff(k, curr_price)
       send_email("Notification price change above threshold #{v}%","Price is: #{curr_price}, Threshold price is #{k}") if per_diff >= v
     }
-    #per_diff = percent_diff(PRICE_BASE, curr_price)
-    #send_email("Notification price change above #{per_diff}%","Price is: #{curr_price}") if per_diff >= PER_THRESHOLD
   end
 
   def get_email_commands_action
-    @logger.info("Performing Get Email Commands")
+    @logger.info("Performing get-email-commands Action")
     messages = get_emails()
     @logger.info("Retrieved #{messages.length} emails")
     # process the commands from the email subject lines
     messages.each {|m| read_email_subject_for_command(m.subject)}
   end
-
-  def send_email(subject, body=nil)
-    #TODO: Return whether it was successful?
-    #TODO: Pass in subject and message
-    @email_transact.send_email(@email_from, @email_to, 
-                         subject,
-                         body)                         
-  end
-
-  def get_emails()
-    emails = @email_transact.get_emails(false, @email_to)
-    emails
+  
+  def run_order_book_action
+    @logger.info("Performing run-order-book Action")
+    @order_book.each{|order| order.run_order}
   end
 
   def read_email_subject_for_command(email_subject)
@@ -93,13 +78,17 @@ class BitcoinTrader
        @logger.error("First word in subject line must be a string. Got #{strings[0]}")
        return
     end
+    #seperate out the fucntionality for managing an order for now
+    if comm == "order"
+      prepare_btc_order(strings)
+      return
+    end
     #to_f never throws exception, so this is safe.
     amt = strings[1].to_f
     if amt.zero? && comm != "check"
       @logger.warn("Amount must be greater than 0")
       return
     end
-    
     #percentage will be 3rd parameter for adding alerts
     perc = strings[2].to_i
     
@@ -122,6 +111,35 @@ class BitcoinTrader
       @logger.warn("Unknown command #{comm}")
       return false
     end
+  end
+  
+  def prepare_btc_order(array_of_strings)
+     #order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01                     
+     buy_or_sell = array_of_strings[1].to_sym
+     order_type = array_of_strings[2].to_sym
+     price_thresh = array_of_strings[3].to_f
+     per_thresh = array_of_strings[4].to_i
+     effective_dttm = DateTime.now
+     expiration_dttm = DateTime.now + array_of_strings[5].to_i
+     
+     total_order_amount = array_of_strings[6].to_f
+     times_to_order = array_of_strings[7].to_f
+     amount_each_order = array_of_strings[8].to_f
+     btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
+                  expiration_dttm, order_type, total_order_amount, times_to_order, amount_each_order)
+     @order_book.push(btc_order)
+     
+  end
+  
+  def send_email(subject, body=nil)
+    return @email_transact.send_email(@email_from, @email_to, 
+                         subject,
+                         body)                         
+  end
+
+  def get_emails()
+    emails = @email_transact.get_emails(false, @email_to)
+    emails
   end
   
   def add_price_check(price, percent)
