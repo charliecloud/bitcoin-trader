@@ -17,6 +17,7 @@ The following commands are currently available. They must be used as specified i
 2. sell BTC_AMOUNT - executes a sell command for the amount of BTC specified
 3. check - checks the current BTC price and emails it back to you
 4. add BTC_PRICE PERCENT- will add an alert to the system so that it will notify you when the price changes by the percentage specified (in either direction) from the BTC_PRICE specified
+5. order BUY_OR_SELL ABSOLUTE_OR_PERCENT PRICE_THRESHOLD PERCENT_TRESHOLD NUM_DAYS_ORDER_TO_STAY_ACTIVE TOTAL_BTC_AMOUNT NUM_OF_ORDERS_TO_FULFILL BTC_AMOUNT_PER_ORDER 
 
 ## Download
 Download all of the files in the repo to wherever you would like to run them
@@ -40,12 +41,12 @@ Run the file using ruby 'filename'
 
 Here are the explanations for the criteria above
 
-###LIVE_ENV = boolean, whether to use the live environment or not
-###S_KEY = string, the API key to use for Coinbase
-###S_SECRET = string, the API secret to use for Coinbase
-###SBOX_URL = string, the Sandbox URL to use for Coinbase
-###EMAIL = string, the gmail account username (without @gmail.com) that is checked by the program to receive commands
-###PW = string, the password for the above account
-###TO_EMAIL = the email address that you will be sending commands and receiving updates to
+->LIVE_ENV = boolean, whether to use the live environment or not
+->S_KEY = string, the API key to use for Coinbase
+->S_SECRET = string, the API secret to use for Coinbase
+->SBOX_URL = string, the Sandbox URL to use for Coinbase
+->EMAIL = string, the gmail account username (without @gmail.com) that is checked by the program to receive commands
+->PW = string, the password for the above account
+->TO_EMAIL = the email address that you will be sending commands and receiving updates to
 
 
