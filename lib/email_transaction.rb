@@ -1,7 +1,6 @@
 require 'gmail'
 
 class EmailTransaction
-  @gmail = nil
  
   def initialize(email,pw)
     @gmail = Gmail.new(email, pw)
@@ -9,7 +8,6 @@ class EmailTransaction
   end
   
   def send_email(fromAdd, toAdd, eSub, eBody)
-    return false unless !@gmail.nil?
     email = @gmail.generate_message {
       from fromAdd
       to toAdd
@@ -21,7 +19,6 @@ class EmailTransaction
   end
   
   def get_emails(peek=false, fromAdd)
-    return false unless !@gmail.nil?
     #Mark it as read?
     @gmail.peek = peek
     messages = @gmail.inbox.emails(:unread, :from => fromAdd)
@@ -29,7 +26,7 @@ class EmailTransaction
   end
   
   def close_email
-    @gmail.logout unless @gmail.nil?
+    @gmail.logout
   end
     
 end
