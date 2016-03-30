@@ -5,23 +5,24 @@ require 'logger'
 
 class BitcoinTrader
   MIN_CHECK = 1
+  ABS_BTC_MAX_TRANSACTION = 2
   
   #Initalizes the program
   def initialize(live, key, secret, url, email_from, pw, email_to)
-    @price_percent_checks = {}
-    #order book that will contain all of the current orders that need to be executed
-    @order_book = []
-    @logger = Logger.new(STDOUT)
     @email_from = email_from
     @pw = pw
     @email_to = email_to
+    @logger = Logger.new(STDOUT)
     if !live
-      @logger.info("Using sandbox")
+      @logger.info("Using Coinbase sandbox environment")
       @client = CoinbaseTransaction.new(key,secret,url)
     else
-      @logger.info("Using live env")
+      @logger.info("Using Coinbase live env")
       @client = CoinbaseTransaction.new(key,secret)
     end
+    @price_percent_checks = {}
+    #order book that will contain all of the current orders that need to be executed
+    @order_book = []
   end
   
   #Main program loop
@@ -40,7 +41,7 @@ class BitcoinTrader
   private
   
   def check_price_action
-    @logger.info("Performing price-check Action")
+    @logger.info("Performing price-check action")
     @logger.info("There are #{@price_percent_checks.length} price-checks to perform")
     curr_price = btc_price
     #for each of the price-check thresholds do a price check
@@ -51,15 +52,15 @@ class BitcoinTrader
   end
 
   def get_email_commands_action
-    @logger.info("Performing get-email-commands Action")
+    @logger.info("Performing get-email-commands action")
     messages = get_emails()
-    @logger.info("Retrieved #{messages.length} emails")
+    @logger.info("There are #{messages.length} new emails to be acted on")
     # process the commands from the email subject lines
-    messages.each {|m| read_email_subject_for_command(m.subject)}
+    messages.each {|message| read_email_subject_for_command(message.subject)}
   end
   
   def run_order_book_action
-    @logger.info("Performing run-order-book Action")
+    @logger.info("Performing run-order-book action")
     @logger.info("There are #{@order_book.length} orders in the order-book")
     @order_book.each{|order| 
       if order.completed
@@ -70,8 +71,8 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
-    #make sure it is not blank email subject
     #TODO: Seperate all the subject checking to seperate function
+    #make sure it is not blank email subject
     if email_subject.nil?
       @logger.warn("Blank email subject line")
       return
@@ -121,7 +122,7 @@ class BitcoinTrader
   end
   
   def prepare_btc_order(array_of_strings)
-     #order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01                     
+     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01                     
      buy_or_sell = array_of_strings[1].to_sym
      order_type = array_of_strings[2].to_sym
      price_thresh = array_of_strings[3].to_f
@@ -132,10 +133,11 @@ class BitcoinTrader
      total_order_amount = array_of_strings[6].to_f
      times_to_order = array_of_strings[7].to_f
      amount_each_order = array_of_strings[8].to_f
+     
      btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
                   expiration_dttm, order_type, total_order_amount, times_to_order, amount_each_order)
+                  
      @order_book.push(btc_order)
-     
   end
   
   def send_email(subject, body=nil)
@@ -160,12 +162,18 @@ class BitcoinTrader
   end
   
   def buy_btc(amt, currency="BTC")  
-    #TODO: Threshold for amount or price?
+    if amt > ABS_BTC_MAX_TRANSACTION
+      @logger.warn("Unable to execute buy BTC command for #{amt} BTC when max threshold is #{ABS_BTC_MAX_TRANSACTION} BTC")
+      return false
+    end
     return @client.buy_btc(amt, currency)                                
   end
 
   def sell_btc(amt, currency="BTC")
-    #TODO: Threshold for amount or price?
+   if amt > ABS_BTC_MAX_TRANSACTION
+      @logger.warn("Unable to execute sell BTC command for #{amt} BTC when max threshold is #{ABS_BTC_MAX_TRANSACTION} BTC")
+      return false
+    end
     return @client.sell_btc(amt, currency)
   end
 
