@@ -13,8 +13,8 @@ class BitcoinTrader
     @order_book = []
     @logger = Logger.new(STDOUT)
     @email_from = email_from
+    @pw = pw
     @email_to = email_to
-    @email_transact = EmailTransaction.new(email_from, pw)
     if !live
       @logger.info("Using sandbox")
       @client = CoinbaseTransaction.new(key,secret,url)
@@ -41,6 +41,7 @@ class BitcoinTrader
   
   def check_price_action
     @logger.info("Performing price-check Action")
+    @logger.info("There are #{@price_percent_checks.length} price-checks to perform")
     curr_price = btc_price
     #for each of the price-check thresholds do a price check
     @price_percent_checks.each {
@@ -59,6 +60,8 @@ class BitcoinTrader
   
   def run_order_book_action
     @logger.info("Performing run-order-book Action")
+    #TODO: Remove completed orders
+    @logger.info("There are #{@order_book.length} orders in the order-book")
     @order_book.each{|order| order.run_order}
   end
 
@@ -132,13 +135,19 @@ class BitcoinTrader
   end
   
   def send_email(subject, body=nil)
-    return @email_transact.send_email(@email_from, @email_to, 
+    email_transact = EmailTransaction.new(@email_from, @pw)
+    result = email_transact.send_email(@email_from, @email_to, 
                          subject,
-                         body)                         
+                         body)      
+    #FIXME: Figure out how to close emails without erroring out 
+    #email_transact.close_email
+    result                  
   end
 
-  def get_emails()
-    emails = @email_transact.get_emails(false, @email_to)
+  def get_emails
+    email_transact = EmailTransaction.new(@email_from, @pw)
+    emails = email_transact.get_emails(false, @email_to)
+    #email_transact.close_email
     emails
   end
   
