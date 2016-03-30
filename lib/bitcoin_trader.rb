@@ -60,9 +60,13 @@ class BitcoinTrader
   
   def run_order_book_action
     @logger.info("Performing run-order-book Action")
-    #TODO: Remove completed orders
     @logger.info("There are #{@order_book.length} orders in the order-book")
-    @order_book.each{|order| order.run_order}
+    @order_book.each{|order| 
+      if order.completed
+        @order_book.delete(order)
+      else
+        order.run_order
+      end}
   end
 
   def read_email_subject_for_command(email_subject)
