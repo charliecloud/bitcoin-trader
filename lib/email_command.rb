@@ -17,13 +17,13 @@ class EmailCommand
     if strings[0].is_a? String
       @command = strings[0].downcase
     else
-       @logger.error("First word in subject line must be a string. Got #{strings[0]}")
+       @logger.error("Expected first word in subject line to be a string. Got #{strings[0]}")
        return false
     end
     #to_f never throws exception, so this is safe.
     @btc_amount = strings[1].to_f
     if @btc_amount.zero? && @command != "check"
-      @logger.warn("Amount must be greater than 0")
+      @logger.warn("BTC Amount must be greater than 0")
       return false
     end
     #percentage will be 3rd parameter for adding alerts

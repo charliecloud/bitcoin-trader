@@ -72,7 +72,6 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
-    #TODO: Seperate all the subject checking to seperate function
     email_command = EmailCommand.new(email_subject)
     if email_command
       amt = email_command.btc_amount
@@ -98,6 +97,7 @@ class BitcoinTrader
         return false
       end
     else
+      @logger.warn("Unable to create email command object due to errors")
       return false
     end
   end
