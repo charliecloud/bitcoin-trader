@@ -16,11 +16,15 @@ class CoinbaseTransaction
   end
   
   def buy_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
-    #TODO: Bubble up exceptions when buying
-    buy = @client.primary_account.buy({:amount => amt,
-                                       :currency => currency,
-                                       :payment_method => p_method.id})
-    @file_logger.info("BTC Buy Attempt")                                      
+    @file_logger.info("BTC Buy Attempt")  
+    begin
+      buy = @client.primary_account.buy({:amount => amt,
+                                        :currency => currency,
+                                        :payment_method => p_method.id})
+    rescue Exception => e
+      @file_logger.error(e.message)
+      return false
+    end                                    
     @file_logger.info(buy)                                           
     case buy.status
     when "completed"
@@ -31,10 +35,15 @@ class CoinbaseTransaction
    end
    
  def sell_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
-    sell = @client.primary_account.sell({:amount => amt,
-                       :currency => "BTC",
-                       :payment_method => p_method.id})
-    @file_logger.info("BTC Sell Attempt")                        
+    @file_logger.info("BTC Sell Attempt") 
+    begin
+      sell = @client.primary_account.sell({:amount => amt,
+                        :currency => "BTC",
+                        :payment_method => p_method.id})  
+    rescue Exception => e
+      @file_logger.error(e.message)
+      return false
+    end                     
     @file_logger.info(sell)  
     case sell.status
     when "completed"

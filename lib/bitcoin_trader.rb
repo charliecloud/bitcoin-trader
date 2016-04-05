@@ -82,11 +82,19 @@ class BitcoinTrader
       when "buy"
         @logger.info("Buying: #{amt} BTC")
         bought = buy_btc(amt)
-        @logger.info("Bought #{amt} BTC successfully") unless !bought
+        if bought
+          @logger.info("Bought #{amt} BTC successfully")
+        else
+          @logger.warn("Unable to buy #{amt} BTC")
+        end
       when "sell"
         @logger.info("Selling: #{amt} BTC")
         sold = sell_btc(amt)
-        @logger.info("Sold #{amt} BTC successfully") unless !sold
+        if sold
+          @logger.info("Sold #{amt} BTC successfully")
+        else
+          @logger.warn("Unable to sell #{amt} BTC")
+        end
       when "check" 
         send_email("Price update: price is #{btc_price}")
       when "add"
@@ -103,7 +111,8 @@ class BitcoinTrader
   end
   
   def prepare_btc_order(array_of_strings)
-     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01                     
+     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01    
+     #TODO: Add basic checks                 
      buy_or_sell = array_of_strings[1].to_sym
      order_type = array_of_strings[2].to_sym
      price_thresh = array_of_strings[3].to_f
