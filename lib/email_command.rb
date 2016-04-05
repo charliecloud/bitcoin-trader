@@ -8,7 +8,7 @@ class EmailCommand
     @logger = Logger.new(STDOUT)
     #make sure it is not blank email subject
     if email_subject_command.nil? || email_subject_command.eql?("")
-      @logger.warn("Blank email subject line")
+      log("Blank email subject line", :warn)
       return false
     end
     email_subject_command.strip!
@@ -17,22 +17,35 @@ class EmailCommand
     if strings[0].is_a? String
       @command = strings[0].downcase
     else
-       @logger.error("Expected first word in subject line to be a string. Got #{strings[0]}")
+       log("Expected first word in subject line to be a string. Got #{strings[0]}", :error)
        return false
     end
     #to_f never throws exception, so this is safe.
     @btc_amount = strings[1].to_f
     if @btc_amount.zero? && @command != "check"
-      @logger.warn("BTC Amount must be greater than 0")
+      log("BTC Amount must be greater than 0", :warn)
       return false
     end
     #percentage will be 3rd parameter for adding alerts
     @percentage = strings[2].to_i
     if @percentage.zero? 
-      @logger.warn("Percentage must be greater than 0")
+      log("Percentage must be greater than 0", :warn)
       return false
     end
     
+  end
+  
+  private
+  
+  def log(message, severity)
+    case severity
+    when :info
+      @logger.info(self.class.name+": "+message)
+    when :warn
+      @logger.warn(self.class.name+": "+message)
+    when :error
+      @logger.error(self.class.name+": "+message)
+    end
   end
   
 end
