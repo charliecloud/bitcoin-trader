@@ -1,6 +1,7 @@
 require_relative 'email_transaction'
 require_relative 'coinbase_transaction'
 require_relative 'bitcoin_order'
+require_relative 'email_command'
 require 'logger'
 
 class BitcoinTrader
@@ -71,52 +72,32 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
-    #TODO: Seperate all the subject checking to seperate function
-    #make sure it is not blank email subject
-    if email_subject.nil?
-      @logger.warn("Blank email subject line")
-      return
-    end
-    email_subject.strip!
-    strings = email_subject.split
-    #command is first position and amount is second
-    if strings[0].is_a? String
-      comm = strings[0].downcase
+    email_command = EmailCommand.new(email_subject)
+    if email_command
+      amt = email_command.btc_amount
+      perc = email_command.percentage
+      comm = email_command.command
+      #check to see what command to do
+      case comm
+      when "buy"
+        @logger.info("Buying: #{amt} BTC")
+        bought = buy_btc(amt)
+        @logger.info("Bought #{amt} BTC successfully") unless !bought
+      when "sell"
+        @logger.info("Selling: #{amt} BTC")
+        sold = sell_btc(amt)
+        @logger.info("Sold #{amt} BTC successfully") unless !sold
+      when "check" 
+        send_email("Price update: price is #{btc_price}")
+      when "add"
+        add_price_check(amt,perc)
+        @logger.info("Price check added for price: #{amt} and percent #{perc}")
+      else
+        @logger.warn("Unknown command #{comm}")
+        return false
+      end
     else
-       @logger.error("First word in subject line must be a string. Got #{strings[0]}")
-       return
-    end
-    #seperate out the fucntionality for managing an order for now
-    if comm == "order"
-      prepare_btc_order(strings)
-      return
-    end
-    #to_f never throws exception, so this is safe.
-    amt = strings[1].to_f
-    if amt.zero? && comm != "check"
-      @logger.warn("Amount must be greater than 0")
-      return
-    end
-    #percentage will be 3rd parameter for adding alerts
-    perc = strings[2].to_i
-    
-    #check to see what command to do
-    case comm
-    when "buy"
-      @logger.info("Buying: #{amt} BTC")
-      bought = buy_btc(amt)
-      @logger.info("Bought #{amt} BTC successfully") unless !bought
-    when "sell"
-      @logger.info("Selling: #{amt} BTC")
-      sold = sell_btc(amt)
-      @logger.info("Sold #{amt} BTC successfully") unless !sold
-    when "check" 
-      send_email("Price update: price is #{btc_price}")
-    when "add"
-      add_price_check(amt,perc)
-      @logger.info("Price check added for price: #{amt} and percent #{perc}")
-    else
-      @logger.warn("Unknown command #{comm}")
+      @logger.warn("Unable to create email command object due to errors")
       return false
     end
   end
