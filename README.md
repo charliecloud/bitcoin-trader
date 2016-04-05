@@ -31,7 +31,7 @@ Create an instance of BitcoinTrader similar to below
 
 require_relative 'bitcoin_trader'
 
-btc_trader = BitcoinTrader.new(LIVE_ENV, S_KEY,S_SECRET,SBOX_URL,EMAIL,PW, TO_EMAIL)
+btc_trader = BitcoinTrader.new(MIN_CHECK, ABS_MAX, LIVE_ENV, S_KEY,S_SECRET,SBOX_URL,EMAIL,PW, TO_EMAIL)
 
 btc_trader.run
 
@@ -41,6 +41,8 @@ Run the file using ruby 'filename'
 
 Here are the explanations for the criteria above
 
+->MIN_CHECK = int, the number of minutes to sleep in between each run of the main loop of the program
+->ABS_MAX = float, the absolute max that should be allowed for any BTC transaction the program will run
 ->LIVE_ENV = boolean, whether to use the live environment or not
 ->S_KEY = string, the API key to use for Coinbase
 ->S_SECRET = string, the API secret to use for Coinbase
