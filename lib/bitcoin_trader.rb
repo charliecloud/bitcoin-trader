@@ -119,15 +119,15 @@ class BitcoinTrader
   end
   
   def prepare_btc_order(array_of_strings)
-     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01    
-     #TODO: Add basic checks    
-     if array_of_strings.length.eql?(9)            
+     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01      
+     if array_of_strings.length.eql?(9)
+      #All the string transforms are safe            
       buy_or_sell = array_of_strings[1].to_sym
       order_type = array_of_strings[2].to_sym
       price_thresh = array_of_strings[3].to_f
       per_thresh = array_of_strings[4].to_i
       effective_dttm = DateTime.now
-      expiration_dttm = DateTime.now + array_of_strings[5].to_i
+      expiration_dttm = (DateTime.now + array_of_strings[5].to_i)
      
       total_order_amount = array_of_strings[6].to_f
       times_to_order = array_of_strings[7].to_f
@@ -185,7 +185,7 @@ class BitcoinTrader
   end
   
   def btc_price
-    price = @client.get_price()
+    price = @client.get_price
     price["amount"].to_f
   end
 
