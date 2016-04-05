@@ -5,11 +5,11 @@ require_relative 'email_command'
 require 'logger'
 
 class BitcoinTrader
-  MIN_CHECK = 1
-  ABS_BTC_MAX_TRANSACTION = 2
   
   #Initalizes the program
-  def initialize(live, key, secret, url, email_from, pw, email_to)
+  def initialize(min_check, abs_max, live, key, secret, url, email_from, pw, email_to)
+    @min_check = min_check
+    @abs_max = abs_max
     @email_from = email_from
     @pw = pw
     @email_to = email_to
@@ -28,14 +28,14 @@ class BitcoinTrader
   
   #Main program loop
   def run
-    while(true) do
+    while true do
       #get all new actions from email
       get_email_commands_action
       #perform the check_price action as needed
       check_price_action
       #run the order book action to execute any valid orders
       run_order_book_action
-      sleep(60*MIN_CHECK)
+      sleep(60*@min_check)
     end
   end
 
@@ -72,6 +72,14 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
+    if (!email_subject.nil? && !email_subject.eql?(""))
+      email_subject.strip!
+      strings = email_subject.split
+      if strings[0] == "order"
+        prepare_btc_order(strings)
+        return
+      end
+    end
     email_command = EmailCommand.new(email_subject)
     if email_command
       amt = email_command.btc_amount
@@ -112,22 +120,27 @@ class BitcoinTrader
   
   def prepare_btc_order(array_of_strings)
      #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01    
-     #TODO: Add basic checks                 
-     buy_or_sell = array_of_strings[1].to_sym
-     order_type = array_of_strings[2].to_sym
-     price_thresh = array_of_strings[3].to_f
-     per_thresh = array_of_strings[4].to_i
-     effective_dttm = DateTime.now
-     expiration_dttm = DateTime.now + array_of_strings[5].to_i
+     #TODO: Add basic checks    
+     if array_of_strings.length.eql?(9)            
+      buy_or_sell = array_of_strings[1].to_sym
+      order_type = array_of_strings[2].to_sym
+      price_thresh = array_of_strings[3].to_f
+      per_thresh = array_of_strings[4].to_i
+      effective_dttm = DateTime.now
+      expiration_dttm = DateTime.now + array_of_strings[5].to_i
      
-     total_order_amount = array_of_strings[6].to_f
-     times_to_order = array_of_strings[7].to_f
-     amount_each_order = array_of_strings[8].to_f
+      total_order_amount = array_of_strings[6].to_f
+      times_to_order = array_of_strings[7].to_f
+      amount_each_order = array_of_strings[8].to_f
      
-     btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
+      btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
                   expiration_dttm, order_type, total_order_amount, times_to_order, amount_each_order)
                   
-     @order_book.push(btc_order)
+      @order_book.push(btc_order)
+    else
+      @logger.warn("Unable to create BTC order due to wrong number of arguments")
+      return false
+    end
   end
   
   def send_email(subject, body=nil)
@@ -152,16 +165,16 @@ class BitcoinTrader
   end
   
   def buy_btc(amt, currency="BTC")  
-    if amt > ABS_BTC_MAX_TRANSACTION
-      @logger.warn("Unable to execute buy BTC command for #{amt} BTC when max threshold is #{ABS_BTC_MAX_TRANSACTION} BTC")
+    if amt > @abs_max
+      @logger.warn("Unable to execute buy BTC command for #{amt} BTC when max threshold is #{@abs_max} BTC")
       return false
     end
     return @client.buy_btc(amt, currency)                                
   end
 
   def sell_btc(amt, currency="BTC")
-   if amt > ABS_BTC_MAX_TRANSACTION
-      @logger.warn("Unable to execute sell BTC command for #{amt} BTC when max threshold is #{ABS_BTC_MAX_TRANSACTION} BTC")
+   if amt > @abs_max
+      @logger.warn("Unable to execute sell BTC command for #{amt} BTC when max threshold is #{@abs_max} BTC")
       return false
     end
     return @client.sell_btc(amt, currency)
