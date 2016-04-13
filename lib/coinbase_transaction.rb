@@ -3,7 +3,7 @@ require 'coinbase/wallet'
 class CoinbaseTransaction
   @client = nil
   
-  def initialize(key, secret, url)
+  def initialize(key, secret, url=nil)
      @client = Coinbase::Wallet::Client.new(api_key: key, api_secret: secret, api_url: url)
      @file_logger = Logger.new('btc_trader_coinbase_transaction.log', 10, 1024000)
   end

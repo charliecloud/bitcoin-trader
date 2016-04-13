@@ -8,12 +8,12 @@ class EmailCommand
     @logger = Logger.new(STDOUT)
     #make sure it is not blank email subject
     if email_subject_command.nil? || email_subject_command.eql?("")
-      log("Blank email subject line", :warn)
+      log("Blank email subject line", :error)
       return false
     end
     email_subject_command.strip!
     strings = email_subject_command.split
-    #command is first position and amount is second
+    #command is first position
     if strings[0].is_a? String
       @command = strings[0].downcase
     else

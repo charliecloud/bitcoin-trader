@@ -54,7 +54,7 @@ class BitcoinTrader
 
   def get_email_commands_action
     @logger.info("Performing get-email-commands action")
-    messages = get_emails()
+    messages = get_emails
     @logger.info("There are #{messages.length} new emails to be acted on")
     # process the commands from the email subject lines
     messages.each {|message| read_email_subject_for_command(message.subject)}
@@ -72,6 +72,7 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
+    #TODO: Integrate BTC order into command structure
     if (!email_subject.nil? && !email_subject.eql?(""))
       email_subject.strip!
       strings = email_subject.split
@@ -80,6 +81,7 @@ class BitcoinTrader
         return
       end
     end
+    #TODO: Create a standardized command format
     email_command = EmailCommand.new(email_subject)
     if email_command
       amt = email_command.btc_amount
@@ -103,7 +105,7 @@ class BitcoinTrader
         else
           @logger.warn("Unable to sell #{amt} BTC")
         end
-      when "check" 
+      when "price" 
         send_email("Price update: price is #{btc_price}")
       when "add"
         add_price_check(amt,perc)
