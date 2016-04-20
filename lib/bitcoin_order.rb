@@ -35,6 +35,7 @@ class BitcoinOrder
   private
   
   def pre_run_checks
+    #TODO: Run checks for orders that are not market orders to check all params there.
     #only run if not completed
     if @completed
       @logger.info("Order not able to run because already in completed status")

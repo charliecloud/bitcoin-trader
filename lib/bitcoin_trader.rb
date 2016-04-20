@@ -72,30 +72,24 @@ class BitcoinTrader
   end
 
   def read_email_subject_for_command(email_subject)
-    #TODO: Integrate BTC order into command structure
-    if (!email_subject.nil? && !email_subject.eql?(""))
-      email_subject.strip!
-      strings = email_subject.split
-      if strings[0] == "order"
-        prepare_btc_order(strings)
-        return
-      end
-    end
-    #TODO: Create a standardized command format
     begin
       email_command = EmailCommand.new(email_subject)
     rescue ArgumentError
-            @logger.warn("Unable to create email command object due to errors")
+      @logger.warn("Unable to create email command object due to errors")
       return false
     end
-    amt = email_command.btc_amount
-    perc = email_command.percentage
     comm = email_command.command
     #check to see what command to do
     case comm
+    when :order
+      @logger.info("Creating BTC order")
+      prepare_btc_order(email_command.parameters)
     when :price 
+      @logger.info("Sending requested price update")
       send_email("Price update: price is #{btc_price}")
     when :alert
+      amt = email_command.btc_amount
+      perc = email_command.percentage
       add_price_check(amt,perc)
       @logger.info("Price check added for price: #{amt} and percent #{perc}")
     else

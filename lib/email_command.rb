@@ -3,6 +3,7 @@ class EmailCommand
   attr_accessor :command
   attr_accessor :btc_amount
   attr_accessor :percentage
+  attr_reader :parameters
   
   def initialize(email_subject_command)
     @logger = Logger.new(STDOUT)
@@ -13,6 +14,7 @@ class EmailCommand
     end
     email_subject_command.strip!
     strings = email_subject_command.split
+    @parameters = strings
     #command is first position
     if strings[0].is_a? String
       @command = strings[0].downcase.to_sym
@@ -22,6 +24,7 @@ class EmailCommand
     end
     #switch based on the type of command
     case @command
+    when :order
     when :price
     when :alert
       @btc_amount = strings[1].to_f
@@ -34,6 +37,9 @@ class EmailCommand
         log("Percentage must be greater than 0 for alert command", :warn)
         raise ArgumentError, "Percentage must be greater than 0 for alert command"
       end
+    else 
+      log("Command type given is unknown", :warn)
+      raise ArgumentError, "Unknown command type"
     end
   end
   
