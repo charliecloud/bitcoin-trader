@@ -13,11 +13,9 @@ A gmail account set up for the program to use exclusively is needed. The command
 
 The following commands are currently available. They must be used as specified in the email subject line
 
-1. buy BTC_AMOUNT - executes a buy command for the amount of BTC specified
-2. sell BTC_AMOUNT - executes a sell command for the amount of BTC specified
-3. check - checks the current BTC price and emails it back to you
-4. add BTC_PRICE PERCENT- will add an alert to the system so that it will notify you when the price changes by the percentage specified (in either direction) from the BTC_PRICE specified
-5. order BUY_OR_SELL ABSOLUTE_OR_PERCENT PRICE_THRESHOLD PERCENT_TRESHOLD NUM_DAYS_ORDER_TO_STAY_ACTIVE TOTAL_BTC_AMOUNT NUM_OF_ORDERS_TO_FULFILL BTC_AMOUNT_PER_ORDER 
+1. price - gets the current BTC price and emails it back to you
+4. alert BTC_PRICE PERCENT- will add an alert to the system so that it will notify you when the price changes by the PERCENT specified (in either direction) from the BTC_PRICE specified
+5. order BUY_OR_SELL ABSOLUTE_OR_PERCENT_OR_MARKET TOTAL_BTC_AMOUNT PRICE_THRESHOLD PERCENT_TRESHOLD NUM_DAYS_ORDER_TO_STAY_ACTIVE NUM_OF_ORDERS_TO_FULFILL BTC_AMOUNT_PER_ORDER - this creates an order for BTC. For the most simple command use only the first 4 params. (ex: order buy market .01)
 
 ## Download
 Download all of the files in the repo to wherever you would like to run them
