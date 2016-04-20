@@ -1,10 +1,10 @@
 require 'coinbase/wallet'
 
 class CoinbaseTransaction
-  @client = nil
-  
-  def initialize(key, secret, url=nil)
+
+  def initialize(key, secret, abs_max, url=nil)
      @client = Coinbase::Wallet::Client.new(api_key: key, api_secret: secret, api_url: url)
+     @abs_max = abs_max
      @file_logger = Logger.new('btc_trader_coinbase_transaction.log', 10, 1024000)
   end
   
@@ -17,6 +17,10 @@ class CoinbaseTransaction
   
   def buy_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
     @file_logger.info("BTC Buy Attempt")  
+    if amt > @abs_max
+      @file_logger.warn("Attempting to buy #{amt} when max is #{@abs_max}") 
+      return false
+    end
     begin
       buy = @client.primary_account.buy({:amount => amt,
                                         :currency => currency,
@@ -36,6 +40,10 @@ class CoinbaseTransaction
    
  def sell_btc(amt, currency="BTC", p_method=@client.payment_methods.first)
     @file_logger.info("BTC Sell Attempt") 
+    if amt > @abs_max
+      @file_logger.warn("Attempting to sell #{amt} when max is #{@abs_max}") 
+      return false
+    end
     begin
       sell = @client.primary_account.sell({:amount => amt,
                         :currency => "BTC",

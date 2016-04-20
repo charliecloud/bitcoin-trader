@@ -16,10 +16,10 @@ class BitcoinTrader
     @logger = Logger.new(STDOUT)
     if !live
       @logger.info("Using Coinbase sandbox environment")
-      @client = CoinbaseTransaction.new(key,secret,url)
+      @client = CoinbaseTransaction.new(key,secret,abs_max,url)
     else
       @logger.info("Using Coinbase live env")
-      @client = CoinbaseTransaction.new(key,secret)
+      @client = CoinbaseTransaction.new(key,secret,abs_max)
     end
     @price_percent_checks = {}
     #order book that will contain all of the current orders that need to be executed
@@ -48,7 +48,7 @@ class BitcoinTrader
     #for each of the price-check thresholds do a price check
     @price_percent_checks.each {
       |k,v| per_diff = percent_diff(k, curr_price)
-      send_email("Notification price change above threshold #{v}%","Price is: #{curr_price}, Threshold price is #{k}") if per_diff >= v
+      send_email("Alert update: price change above threshold #{v}%","Price is: #{curr_price}, Threshold price is #{k}, Percent difference is #{per_diff}") if per_diff >= v
     }
   end
 
@@ -82,40 +82,24 @@ class BitcoinTrader
       end
     end
     #TODO: Create a standardized command format
-    email_command = EmailCommand.new(email_subject)
-    if email_command
-      amt = email_command.btc_amount
-      perc = email_command.percentage
-      comm = email_command.command
-      #check to see what command to do
-      case comm
-      when "buy"
-        @logger.info("Buying: #{amt} BTC")
-        bought = buy_btc(amt)
-        if bought
-          @logger.info("Bought #{amt} BTC successfully")
-        else
-          @logger.warn("Unable to buy #{amt} BTC")
-        end
-      when "sell"
-        @logger.info("Selling: #{amt} BTC")
-        sold = sell_btc(amt)
-        if sold
-          @logger.info("Sold #{amt} BTC successfully")
-        else
-          @logger.warn("Unable to sell #{amt} BTC")
-        end
-      when "price" 
-        send_email("Price update: price is #{btc_price}")
-      when "alert"
-        add_price_check(amt,perc)
-        @logger.info("Price check added for price: #{amt} and percent #{perc}")
-      else
-        @logger.warn("Unknown command #{comm}")
-        return false
-      end
+    begin
+      email_command = EmailCommand.new(email_subject)
+    rescue ArgumentError
+            @logger.warn("Unable to create email command object due to errors")
+      return false
+    end
+    amt = email_command.btc_amount
+    perc = email_command.percentage
+    comm = email_command.command
+    #check to see what command to do
+    case comm
+    when :price 
+      send_email("Price update: price is #{btc_price}")
+    when :alert
+      add_price_check(amt,perc)
+      @logger.info("Price check added for price: #{amt} and percent #{perc}")
     else
-      @logger.warn("Unable to create email command object due to errors")
+      @logger.warn("Unknown command #{comm}. Will not act on it.")
       return false
     end
   end
@@ -164,22 +148,6 @@ class BitcoinTrader
   
   def add_price_check(price, percent)
     @price_percent_checks[price] = percent
-  end
-  
-  def buy_btc(amt, currency="BTC")  
-    if amt > @abs_max
-      @logger.warn("Unable to execute buy BTC command for #{amt} BTC when max threshold is #{@abs_max} BTC")
-      return false
-    end
-    return @client.buy_btc(amt, currency)                                
-  end
-
-  def sell_btc(amt, currency="BTC")
-   if amt > @abs_max
-      @logger.warn("Unable to execute sell BTC command for #{amt} BTC when max threshold is #{@abs_max} BTC")
-      return false
-    end
-    return @client.sell_btc(amt, currency)
   end
 
   def percent_diff(base, change)

@@ -9,34 +9,37 @@ class EmailCommand
     #make sure it is not blank email subject
     if email_subject_command.nil? || email_subject_command.eql?("")
       log("Blank email subject line", :error)
-      return false
+      raise ArgumentError, "Blank email subject line"
     end
     email_subject_command.strip!
     strings = email_subject_command.split
     #command is first position
     if strings[0].is_a? String
-      @command = strings[0].downcase
+      @command = strings[0].downcase.to_sym
     else
        log("Expected first word in subject line to be a string. Got #{strings[0]}", :error)
-       return false
+       raise ArgumentError, "First word in subject line not a String"
     end
-    #to_f never throws exception, so this is safe.
-    @btc_amount = strings[1].to_f
-    if @btc_amount.zero? && @command != "check"
-      log("BTC Amount must be greater than 0", :warn)
-      return false
+    #switch based on the type of command
+    case @command
+    when :price
+    when :alert
+      @btc_amount = strings[1].to_f
+      if @btc_amount.zero?
+        log("BTC amount must be greater than 0 for alert command", :warn)
+        raise ArgumentError, "BTC amount must be greater than 0 for alert command"
+      end
+      @percentage = strings[2].to_i
+      if @percentage.zero? 
+        log("Percentage must be greater than 0 for alert command", :warn)
+        raise ArgumentError, "Percentage must be greater than 0 for alert command"
+      end
     end
-    #percentage will be 3rd parameter for adding alerts
-    @percentage = strings[2].to_i
-    if @percentage.zero? 
-      log("Percentage must be greater than 0", :warn)
-      return false
-    end
-    
   end
   
   private
   
+  #TODO: Make into a module and then mix-in
   def log(message, severity)
     case severity
     when :info
