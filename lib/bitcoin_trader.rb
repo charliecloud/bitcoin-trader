@@ -107,7 +107,7 @@ class BitcoinTrader
         end
       when "price" 
         send_email("Price update: price is #{btc_price}")
-      when "add"
+      when "alert"
         add_price_check(amt,perc)
         @logger.info("Price check added for price: #{amt} and percent #{perc}")
       else
@@ -121,28 +121,28 @@ class BitcoinTrader
   end
   
   def prepare_btc_order(array_of_strings)
-     #format: order buy absolute 11000 12 7(days to last for) 1(BTC) 1(TTO) .01      
-     if array_of_strings.length.eql?(9)
-      #All the string transforms are safe            
-      buy_or_sell = array_of_strings[1].to_sym
-      order_type = array_of_strings[2].to_sym
-      price_thresh = array_of_strings[3].to_f
-      per_thresh = array_of_strings[4].to_i
-      effective_dttm = DateTime.now
-      expiration_dttm = (DateTime.now + array_of_strings[5].to_i)
-     
-      total_order_amount = array_of_strings[6].to_f
-      times_to_order = array_of_strings[7].to_f
-      amount_each_order = array_of_strings[8].to_f
-     
-      btc_order = BitcoinOrder.new(@client, buy_or_sell, price_thresh, per_thresh, effective_dttm, 
-                  expiration_dttm, order_type, total_order_amount, times_to_order, amount_each_order)
-                  
-      @order_book.push(btc_order)
-    else
-      @logger.warn("Unable to create BTC order due to wrong number of arguments")
+    #format: order buy absolute 1(BTC) 11000 12 7(days to last for) 1(TTO) .01
+    #First four parameters are required
+    arr_length = array_of_strings.length
+    if arr_length < 4
+      @logger.error("To create btc_order need at least 4 params. Got #{arr_length}")
       return false
-    end
+    end      
+    #All the string transforms are safe           
+    buy_or_sell = array_of_strings[1].to_sym
+    order_type = array_of_strings[2].to_sym
+    total_order_amount = array_of_strings[3].to_f
+    price_thresh = array_of_strings[4].to_f unless array_of_strings[4].nil?
+    per_thresh = array_of_strings[5].to_i unless array_of_strings[5].nil?
+    effective_dttm = DateTime.now
+    expiration_dttm = (DateTime.now + array_of_strings[6].to_i) unless array_of_strings[6].nil?
+    times_to_order = array_of_strings[7].to_f unless array_of_strings[7].nil?
+    amount_each_order = array_of_strings[8].to_f unless array_of_strings[8].nil?
+     
+    btc_order = BitcoinOrder.new(@client, buy_or_sell, order_type, total_order_amount, price_thresh, per_thresh, effective_dttm, 
+                  expiration_dttm, times_to_order, amount_each_order)
+    #Adding the order to the order book              
+    @order_book.push(btc_order)
   end
   
   def send_email(subject, body=nil)
