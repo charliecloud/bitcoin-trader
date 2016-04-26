@@ -1,4 +1,7 @@
+require_relative 'console_logger'
+
 class EmailCommand
+  include ConsoleLogger
   
   attr_accessor :command
   attr_accessor :btc_amount
@@ -42,19 +45,4 @@ class EmailCommand
       raise ArgumentError, "Unknown command type"
     end
   end
-  
-  private
-  
-  #TODO: Make into a module and then mix-in
-  def log(message, severity)
-    case severity
-    when :info
-      @logger.info(self.class.name+": "+message)
-    when :warn
-      @logger.warn(self.class.name+": "+message)
-    when :error
-      @logger.error(self.class.name+": "+message)
-    end
-  end
-  
 end

@@ -6,6 +6,10 @@ require 'logger'
 
 class BitcoinTrader
   
+  #TODO: Let user know if command was successful
+  #TODO: Cancel price alerts
+  #TODO: Get all current alerts
+  
   #Initalizes the program
   def initialize(min_check, abs_max, live, key, secret, url, email_from, pw, email_to)
     @min_check = min_check
