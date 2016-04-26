@@ -5,20 +5,43 @@ class BitcoinOrder
   include ConsoleLogger
   attr_reader :completed
   
-  def initialize(btc_trans, buy_or_sell, order_type, total_order_amount, price_thresh=nil, per_thresh=nil, effective_dttm=nil, expiration_dttm=nil, times_to_order=1, amount_each_order=nil)
+   def initialize(btc_trans, array_of_strings)
+     #TODO: Only allow certain order types
     @logger = Logger.new(STDOUT)
+    #first three are required
+    arr_length = array_of_strings.length
+    if arr_length < 4
+      log("To create btc order need at least 4 params. Got #{arr_length}", :error)
+      raise ArgumentError, "wrong number of arguments"
+    end  
+    @buy_or_sell = array_of_strings[1].to_sym
+    @order_type = array_of_strings[2].to_sym
+    @total_order_amount = array_of_strings[3].to_f
+    #make this required when the order type is absolute
+    @price_thresh = array_of_strings[4].to_f unless array_of_strings[4].nil?
+    if @price_thresh.nil? && @order_type.eql?(:absolute)
+      log("Absolute btc order requires a price threshold", :error)
+      raise ArgumentError, "absolute orders require a price threshold"
+    end
+    #make this required when the order type is percent
+    @per_thresh = array_of_strings[5].to_i unless array_of_strings[5].nil?
+    if @price_thresh.nil? && @order_type.eql?(:percent)
+      log("Percent btc order requires a percent threshold", :error)
+      raise ArgumentError, "percent orders require a price threshold"
+    end
+    #TODO: Allow an effective dttm to be passed in
+    @effective_dttm = DateTime.now
+    #set a default expiration date
+    @expiration_dttm = (DateTime.now + array_of_strings[6].to_i) unless array_of_strings[6].nil?
+    @expiration_dttm ||= DateTime.now + 1
+    #default the times to order to 1
+    @times_to_order = array_of_strings[7].to_f unless array_of_strings[7].nil?
+    @times_to_order ||= 1
+    #default the amount each order to total order / number of times to order
+    @amount_each_order = array_of_strings[8].to_f unless array_of_strings[8].nil?
+    @amount_each_order ||= @total_order_amount/@times_to_order.to_f
     
     @btc_trans = btc_trans
-    @buy_or_sell = buy_or_sell
-    @price_thresh = price_thresh
-    @per_thresh = per_thresh
-    @created_dttm = DateTime.now
-    @effective_dttm = effective_dttm
-    @expiration_dttm = expiration_dttm
-    @order_type = order_type
-    @total_order_amount = total_order_amount
-    @times_to_order = times_to_order
-    @amount_each_order = amount_each_order
     
     @completed = false
     @num_times_run = 0
@@ -37,7 +60,6 @@ class BitcoinOrder
   private
   
   def pre_run_checks
-    #TODO: Run checks for orders that are not market orders to check all params there.
     #only run if not completed
     if @completed
       log("Order not able to run because already in completed status", :info)
@@ -49,24 +71,18 @@ class BitcoinOrder
       return false
     end
     #only run if not past the expiration date
-    #don't check this for market orders
-    if !@order_type.eql?(:market)
-      if @expiration_dttm < DateTime.now
-        log("Order not able to run because it is already expired", :info)
-        #since the order is expired mark it as complete
-        @completed = true
-        return false
-      end
+    if @expiration_dttm < DateTime.now
+      log("Order not able to run because it is already expired", :info)
+      #since the order is expired mark it as complete
+      @completed = true
+      return false
     end
     #only run if amount so far is less than so_far + how much for each order
-    #don't check for market orders
-    if !@order_type.eql?(:market)
-      if ((@amount_so_far+@amount_each_order) > @total_order_amount)
-        log("Order is not able to run because doing so will put it over the total order amount", :info)
-        #mark it as complete now
-        @completed = true
-        return false
-      end
+    if ((@amount_so_far+@amount_each_order) > @total_order_amount)
+      log("Order is not able to run because doing so will put it over the total order amount", :info)
+      #mark it as complete now
+      @completed = true
+      return false
     end
     log("Pre-run checks complete, attempting to fulfill #{@buy_or_sell} #{@order_type} order", :info)
     return true
@@ -129,7 +145,7 @@ class BitcoinOrder
       log("Order executed", :info)
       post_run_checks
     else
-      log("Order not exectued", :info)
+      log("Order not executed", :info)
     end
   end
   
