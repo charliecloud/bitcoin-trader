@@ -1,7 +1,8 @@
 require 'gmail'
+require_relative 'console_logger'
 
 class EmailTransaction
- 
+  include ConsoleLogger
   def initialize(email,pw)
     @gmail = Gmail.new(email, pw)
     @logger = Logger.new(STDOUT)
@@ -14,7 +15,7 @@ class EmailTransaction
       subject eSub
       body eBody }
     email.deliver! 
-    @logger.info("Email delivered")
+    log("Email delivered", :info)
     return true
   end
   
@@ -22,6 +23,7 @@ class EmailTransaction
     #Mark it as read?
     @gmail.peek = peek
     messages = @gmail.inbox.emails(:unread, :from => fromAdd)
+    log("Emails retrieved", :info)
     messages
   end
   

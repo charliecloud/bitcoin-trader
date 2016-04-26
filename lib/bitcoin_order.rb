@@ -1,9 +1,13 @@
 require_relative 'coinbase_transaction'
+require_relative 'console_logger'
 
 class BitcoinOrder
+  include ConsoleLogger
   attr_reader :completed
   
   def initialize(btc_trans, buy_or_sell, order_type, total_order_amount, price_thresh=nil, per_thresh=nil, effective_dttm=nil, expiration_dttm=nil, times_to_order=1, amount_each_order=nil)
+    @logger = Logger.new(STDOUT)
+    
     @btc_trans = btc_trans
     @buy_or_sell = buy_or_sell
     @price_thresh = price_thresh
@@ -19,8 +23,6 @@ class BitcoinOrder
     @completed = false
     @num_times_run = 0
     @amount_so_far = 0
-    
-    @logger = Logger.new(STDOUT)
   end
   
   def run_order
@@ -38,19 +40,19 @@ class BitcoinOrder
     #TODO: Run checks for orders that are not market orders to check all params there.
     #only run if not completed
     if @completed
-      @logger.info("Order not able to run because already in completed status")
+      log("Order not able to run because already in completed status", :info)
       return false
     end
     #only run if it is past the effective date
     if @effective_dttm > DateTime.now
-      @logger.info("Order not able to run because it is not effective yet")
+      log("Order not able to run because it is not effective yet", :info)
       return false
     end
     #only run if not past the expiration date
     #don't check this for market orders
     if !@order_type.eql?(:market)
       if @expiration_dttm < DateTime.now
-        @logger.info("Order not able to run because it is already expired")
+        log("Order not able to run because it is already expired", :info)
         #since the order is expired mark it as complete
         @completed = true
         return false
@@ -60,13 +62,13 @@ class BitcoinOrder
     #don't check for market orders
     if !@order_type.eql?(:market)
       if ((@amount_so_far+@amount_each_order) > @total_order_amount)
-        @logger.info("Order is not able to run because doing so will put it over the total order amount")
+        log("Order is not able to run because doing so will put it over the total order amount", :info)
         #mark it as complete now
         @completed = true
         return false
       end
     end
-    @logger.info("Pre-run checks complete, attempting to fulfill #{@buy_or_sell} #{@order_type} order")
+    log("Pre-run checks complete, attempting to fulfill #{@buy_or_sell} #{@order_type} order", :info)
     return true
   end
   
@@ -78,56 +80,56 @@ class BitcoinOrder
     per_thresh = percent_diff(@price_thresh, curr_price) unless @order_type.eql?(:market)
     case @buy_or_sell
     when :buy
-      #@logger.info("Buy order")
+      #log("Buy order")
       case @order_type
       when :market
-          @logger.info("Executing market buy order at price #{curr_price}")
+          log("Executing market buy order at price #{curr_price}", :info)
           trans_executed = true
           @completed = true
       when :absolute
         if curr_price <= @price_thresh
           #exectute order
-          @logger.info("Executing absolute buy order at #{curr_price}, price_thresh is #{@price_thresh}")
+          log("Executing absolute buy order at #{curr_price}, price_thresh is #{@price_thresh}", :info)
           trans_executed = true
         end
       when :percent
         if per_thresh < -@per_thresh
           #execute order
-          @logger.info("Executing percent buy order at #{curr_price}, per_thresh is #{-@per_thresh}")
+          log("Executing percent buy order at #{curr_price}, per_thresh is #{-@per_thresh}", :info)
           trans_executed = true
         end
       else
-        @logger.warn("Unknown order_type #{@order_type}")
+        log("Unknown order_type #{@order_type}", :warn)
         return false
       end
     when :sell
-      #@logger.info("Sell order")
+      #log("Sell order")
       case @order_type
       when :market
-          @logger.info("Executing market sell order at price #{curr_price}")
+          log("Executing market sell order at price #{curr_price}", :info)
           trans_executed = true
           @completed = true
       when :absolute
         if curr_price >= @price_thresh
           #execute order
-          @logger.info("Executing absolute sell order at #{curr_price}, price_thresh is #{@price_thresh}")
+          log("Executing absolute sell order at #{curr_price}, price_thresh is #{@price_thresh}", :info)
           trans_executed = true
         end
       when :percent
         if (per_thresh > @per_thresh)
-          @logger.info("Executing percent sell order at #{curr_price}, per_thresh is #{@per_thresh}")
+          log("Executing percent sell order at #{curr_price}, per_thresh is #{@per_thresh}", :info)
           trans_executed = true
         end
       end
     else
-      @logger.warn("Unknown buy_or_sell type #{@buy_or_sell}")
+      log("Unknown buy_or_sell type #{@buy_or_sell}", :warn)
       return false
     end
     if trans_executed
-      @logger.info("Order executed")
+      log("Order executed", :info)
       post_run_checks
     else
-      @logger.info("Order not exectued")
+      log("Order not exectued", :info)
     end
   end
   
@@ -140,9 +142,9 @@ class BitcoinOrder
       @completed = true if @amount_so_far >= @total_order_amount
     end
     if @completed
-      @logger.info("Order is complete")
+      log("Order is complete", :info)
     else
-      @logger.info("Order is not complete, may complete later")
+      log("Order is not complete, may complete later", :info)
     end
   end
   
