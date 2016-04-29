@@ -96,7 +96,11 @@ class BitcoinTrader
       amt = email_command.btc_amount
       perc = email_command.percentage
       add_price_check(amt,perc)
-      log("Price check added for price: #{amt} and percent #{perc}", :info)
+      log("Price alert added for price: #{amt} and percent #{perc}", :info)
+    when :cancel
+      log("Cancelling all price alerts", :info)
+      @price_percent_checks = {}
+      log("All price alerts cancelled", :info)
     else
       log("Unknown command #{comm}. Will not act on it.", :warn)
       return false

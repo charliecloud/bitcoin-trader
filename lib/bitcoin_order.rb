@@ -89,6 +89,7 @@ class BitcoinOrder
   end
   
   def fulfill_order
+    #TODO: Implement the buy and sell to do actual transactions
     trans_executed = false
     #get the price
     #TODO: Try-catch block

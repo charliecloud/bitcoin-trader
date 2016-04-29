@@ -29,6 +29,7 @@ class EmailCommand
     case @command
     when :order
     when :price
+    when :cancel
     when :alert
       @btc_amount = strings[1].to_f
       if @btc_amount.zero?
