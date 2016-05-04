@@ -7,7 +7,6 @@ require 'logger'
 
 class BitcoinTrader
   include ConsoleLogger
-  #TODO: Let user know if command was successful
   #TODO: Get all current alerts
   
   #Initalizes the program
@@ -61,7 +60,11 @@ class BitcoinTrader
     messages = get_emails
     log("There are #{messages.length} new emails to be acted on", :info)
     # process the commands from the email subject lines
-    messages.each {|message| read_email_subject_for_command(message.subject)}
+    messages.each {|message| 
+      success = read_email_subject_for_command(message.subject)
+      #let the user know whether the command was done successfully
+      send_email("Encountered issue processing command, check syntax") unless success
+      }
   end
   
   def run_order_book_action
@@ -87,19 +90,23 @@ class BitcoinTrader
     case comm
     when :order
       log("Creating btc order", :info)
-      prepare_btc_order(email_command.parameters)
+      success = prepare_btc_order(email_command.parameters)
+      return success
     when :price 
       log("Sending requested price update", :info)
       send_email("Price update: price is #{btc_price}")
+      return true
     when :alert
       amt = email_command.btc_amount
       perc = email_command.percentage
       add_price_check(amt,perc)
       log("Price alert added for price: #{amt} and percent #{perc}", :info)
+      return true
     when :cancel
       log("Cancelling all price alerts", :info)
       @price_percent_checks = {}
       log("All price alerts cancelled", :info)
+      return true
     else
       log("Unknown command #{comm}. Will not act on it.", :warn)
       return false
