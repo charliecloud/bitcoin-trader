@@ -6,9 +6,8 @@ class BitcoinOrder
   attr_reader :completed
   
    def initialize(btc_trans, array_of_strings)
-     #TODO: Only allow certain order types
     @logger = Logger.new(STDOUT)
-    #first three are required
+    #first three args are required
     arr_length = array_of_strings.length
     if arr_length < 4
       log("To create btc order need at least 4 params. Got #{arr_length}", :error)
@@ -16,6 +15,11 @@ class BitcoinOrder
     end  
     @buy_or_sell = array_of_strings[1].to_sym
     @order_type = array_of_strings[2].to_sym
+    #check the order types
+    if !@order_type.eql?(:market || :absolute || :percent)
+      log("Attempting to use invalid order type, order will not be created", :error)
+      raise ArgumentError, "invalid order type"
+    end
     @total_order_amount = array_of_strings[3].to_f
     #make this required when the order type is absolute
     @price_thresh = array_of_strings[4].to_f unless array_of_strings[4].nil?
@@ -33,6 +37,7 @@ class BitcoinOrder
     @effective_dttm = DateTime.now
     #set a default expiration date
     @expiration_dttm = (DateTime.now + array_of_strings[6].to_i) unless array_of_strings[6].nil?
+    #default to expire in 1 day
     @expiration_dttm ||= DateTime.now + 1
     #default the times to order to 1
     @times_to_order = array_of_strings[7].to_f unless array_of_strings[7].nil?
@@ -89,15 +94,13 @@ class BitcoinOrder
   end
   
   def fulfill_order
-    #TODO: Implement the buy and sell to do actual transactions
     trans_executed = false
     #get the price
-    #TODO: Try-catch block
     curr_price = @btc_trans.get_price.amount.to_f
+    #no threshold for market orders
     per_thresh = percent_diff(@price_thresh, curr_price) unless @order_type.eql?(:market)
     case @buy_or_sell
     when :buy
-      #log("Buy order")
       case @order_type
       when :market
           log("Executing market buy order at price #{curr_price}", :info)
@@ -120,7 +123,6 @@ class BitcoinOrder
         return false
       end
     when :sell
-      #log("Sell order")
       case @order_type
       when :market
           log("Executing market sell order at price #{curr_price}", :info)
@@ -137,23 +139,39 @@ class BitcoinOrder
           log("Executing percent sell order at #{curr_price}, per_thresh is #{@per_thresh}", :info)
           trans_executed = true
         end
+      else
+        log("Unknown order_type #{@order_type}", :warn)
+        return false
       end
     else
       log("Unknown buy_or_sell type #{@buy_or_sell}", :warn)
       return false
     end
     if trans_executed
-      log("Order executed", :info)
-      post_run_checks
+      #execute order
+      log("Executing order...", :info)
+      trans_success = false
+      case @buy_or_sell
+      when :buy
+        trans_success = @btc_trans.buy_btc(@amount_each_order)
+      when :sell
+        trans_success = @btc_trans.sell_btc(@amount_each_order)
+      end
     else
       log("Order not executed", :info)
+    end
+    if trans_success
+      log("Order executed successfully!", :info)
+      post_run_checks
+    else
+      log("Order attempted but not able to be executed", :warn)
     end
   end
   
   def post_run_checks
-    if !@order_type.eql?(:market)
+    if !@completed
       @num_times_run += 1
-      @completed = true if @num_times_run == @times_to_order
+      @completed = true if @num_times_run.eql?(@times_to_order)
       @completed = true if @expiration_dttm < DateTime.now
       @amount_so_far += @amount_each_order
       @completed = true if @amount_so_far >= @total_order_amount

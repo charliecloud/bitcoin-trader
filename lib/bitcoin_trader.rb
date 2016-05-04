@@ -8,7 +8,6 @@ require 'logger'
 class BitcoinTrader
   include ConsoleLogger
   #TODO: Let user know if command was successful
-  #TODO: Cancel price alerts
   #TODO: Get all current alerts
   
   #Initalizes the program
